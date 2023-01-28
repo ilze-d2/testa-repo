@@ -1,18 +1,30 @@
 #tiek importētas bibliotekas
+import logging
+import logging.config
 import requests  
 import json
 import datetime
 import time
 import yaml
 
+# Loading logging configuration
+with open('./log_worker.yaml', 'r') as stream:
+        log_config = yaml.safe_load(stream)
+
+logging.config.dictConfig(log_config)
+
+# Creating logger
+logger = logging.getLogger('root')
+
 #tiek importēta datetime klase un izdrukāts: Asteroid processing service
 from datetime import datetime
 from configparser import ConfigParser
-print('Asteroid processing service')
+logger.info('Asteroid processing service')
 
 # Initiating and reading config values
 #tiek izdrukāts: Loading configuration from file
-print('Loading configuration from file')
+logger.info('Loading configuration from file')
+
 
 try:
 	config = ConfigParser()
@@ -23,24 +35,24 @@ try:
 
 except:
 	logger.exception('')
-print('DONE')
+logger.info('DONE')
 
 # Getting todays date
 #tiek izveidota fukcija, kura iegūst informāciju par šodienas datumu (gadu, mēnesi, dienu)
 #tiek izdrukāts: Generated today's date:  un informācija par šodienas datumu
 dt = datetime.now()
 request_date = str(dt.year) + "-" + str(dt.month).zfill(2) + "-" + str(dt.day).zfill(2)  
-print("Generated today's date: " + str(request_date))
+logger.debug("Generated today's date: " + str(request_date))
 
 #izmantojot NASA API URL adresi tiek izdrukāta adrese ,piemēram,:
 #Request url:https://api.nasa.gov/neo/rest/v1/feed?start_date=2023-01-28&end_date=2023-01-28&api_key=FAXImnwMhMlumCiQ96i6qAwu1CqAqvEx7Bwwlnik 
-print("Request url: " + str(nasa_api_url + "rest/v1/feed?start_date=" + request_date + "&end_date=" + request_date + "&api_key=" + nasa_api_key))
+logger.debug("Request url: " + str(nasa_api_url + "rest/v1/feed?start_date=" + request_date + "&end_date=" + request_date + "&api_key=" + nasa_api_key))
 r = requests.get(nasa_api_url + "rest/v1/feed?start_date=" + request_date + "&end_date=" + request_date + "&api_key=" + nasa_api_key)
 
 #tiek izdrukāta informācija par savienojumu ar serveri, hedris un teksts
-print("Response status code: " + str(r.status_code))
-print("Response headers: " + str(r.headers))
-print("Response content: " + str(r.text))
+logger.debug("Response status code: " + str(r.status_code))
+logger.debug("Response headers: " + str(r.headers))
+logger.debug("Response content: " + str(r.text))
 
 #tiek pārbaudīts vai pieprasījums ir bijis veiksmīgs un  ir savienojums ar severi
 if r.status_code == 200:
@@ -56,7 +68,7 @@ if r.status_code == 200:
 	if 'element_count' in json_data:
 		ast_count = int(json_data['element_count'])
 		#tiek izdrukāta informāciaja par asteorīdiem šodien
-		print("Asteroid count today: " + str(ast_count))
+		logger.info("Asteroid count today: " + str(ast_count))
 
 		#tiek pārbaudīts vai ast_count ir lielāks par 0
 		if ast_count > 0:
@@ -127,7 +139,7 @@ if r.status_code == 200:
 					#ja close_approach_data nav lielāks par 0
 					else: 
 						#tiek izdrukāts:No close approach data in message
-						print("No close approach data in message")
+						logger.warning("No close approach data in message")
 						# tiek pieņemtas vērtības tmp_ast_close_appr_ts, tmp_ast_close_appr_dt_utc,
 						#tmp_ast_close_appr_dt, tmp_ast_speed, mp_ast_miss_dist 
 						tmp_ast_close_appr_ts = 0
@@ -137,10 +149,10 @@ if r.status_code == 200:
 						tmp_ast_miss_dist = -1
 
 					#tiek izdrukāta informācija par asteorīdu
-					print("------------------------------------------------------- >>")
-					print("Asteroid name: " + str(tmp_ast_name) + " | INFO: " + str(tmp_ast_nasa_jpl_url) + " | Diameter: " + str(tmp_ast_diam_min) + " - " + str(tmp_ast_diam_max) + " km | Hazardous: " + str(tmp_ast_hazardous))
-					print("Close approach TS: " + str(tmp_ast_close_appr_ts) + " | Date/time UTC TZ: " + str(tmp_ast_close_appr_dt_utc) + " | Local TZ: " + str(tmp_ast_close_appr_dt))
-					print("Speed: " + str(tmp_ast_speed) + " km/h" + " | MISS distance: " + str(tmp_ast_miss_dist) + " km")
+					logger.info("------------------------------------------------------- >>")
+					logger.info("Asteroid name: " + str(tmp_ast_name) + " | INFO: " + str(tmp_ast_nasa_jpl_url) + " | Diameter: " + str(tmp_ast_diam_min) + " - " + str(tmp_ast_diam_max) + " km | Hazardous: " + str(tmp_ast_hazardous))
+					logger.info("Close approach TS: " + str(tmp_ast_close_appr_ts) + " | Date/time UTC TZ: " + str(tmp_ast_close_appr_dt_utc) + " | Local TZ: " + str(tmp_ast_close_appr_dt))
+					logger.info("Speed: " + str(tmp_ast_speed) + " km/h" + " | MISS distance: " + str(tmp_ast_miss_dist) + " km")
 
 					#ja tmp_ast_hazardous  vērtība ir True, tad tiek  pievienoti dati ast_hazardous
 					# Adding asteroid data to the corresponding array
@@ -152,10 +164,10 @@ if r.status_code == 200:
 
 		#ja ast_count nav lielāks par 0, tad  tiek izdrukāts: No asteroids are going to hit earth today
 		else:
-			print("No asteroids are going to hit earth today")
+			logger.info("No asteroids are going to hit earth today")
 
 	#tiek izdrukāts Hazardous asteorids un Safe asteroids daudzums (garums)
-	print("Hazardous asteorids: " + str(len(ast_hazardous)) + " | Safe asteroids: " + str(len(ast_safe)))
+	logger.info("Hazardous asteorids: " + str(len(ast_hazardous)) + " | Safe asteroids: " + str(len(ast_safe)))
 
 	#tiek pārbaudīts vai ast_hazardous garums ir lielāks par 0
 	if len(ast_hazardous) > 0:
@@ -164,7 +176,7 @@ if r.status_code == 200:
 		ast_hazardous.sort(key = lambda x: x[4], reverse=False)
 
 		#tiek izdrukāts: Today's possible apocalypse (asteroid impact on earth) times:
-		print("Today's possible apocalypse (asteroid impact on earth) times:")
+		logger.info("Today's possible apocalypse (asteroid impact on earth) times:")
 		#tiek veikta iterācija  sarakstā  un tiek izdrukāta informācija 
 		#tmp_ast_close_appr_dt, tmp_ast_name,| more info: ,tmp_ast_nasa_jpl_url
 		for asteroid in ast_hazardous:
@@ -173,13 +185,13 @@ if r.status_code == 200:
 		#tiek sakartots saraksts ast_hazardous pēc elementa tmp_ast_miss_dist  augošā secībā
 		ast_hazardous.sort(key = lambda x: x[8], reverse=False)
 		#tiek izdrukāts Closest passing distance is for:, tmp_ast_name, at:,tmp_ast_miss_dist ,km | more info:,tmp_ast_nasa_jpl_url 
-		print("Closest passing distance is for: " + str(ast_hazardous[0][0]) + " at: " + str(int(ast_hazardous[0][8])) + " km | more info: " + str(ast_hazardous[0][1]))
+		logger.info("Closest passing distance is for: " + str(ast_hazardous[0][0]) + " at: " + str(int(ast_hazardous[0][8])) + " km | more info: " + str(ast_hazardous[0][1]))
 
 	#ja ast_hazardous garums ir mazāks par 0
 	else:
 		#tiek izdrukāta informācija par to, ka šodien neviens bītams asteroīds zemei garām nelido
-		print("No asteroids close passing earth today")
+		logger.info("No asteroids close passing earth today")
 
 else:
 	#tiek izdrukāta informācija par to, ka šobrīd nevar savienoties ar NASA API un tiek izdrukāta informacija
-	print("Unable to get response from API. Response code: " + str(r.status_code) + " | content: " + str(r.text))
+	logger.error("Unable to get response from API. Response code: " + str(r.status_code) + " | content: " + str(r.text))
