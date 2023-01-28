@@ -7,15 +7,23 @@ import yaml
 
 #tiek importēta datetime klase un izdrukāts: Asteroid processing service
 from datetime import datetime
+from configparser import ConfigParser
 print('Asteroid processing service')
 
 # Initiating and reading config values
 #tiek izdrukāts: Loading configuration from file
 print('Loading configuration from file')
 
-# tiek norādīta nasa api atslēga un adrese
-nasa_api_key = "FAXImnwMhMlumCiQ96i6qAwu1CqAqvEx7Bwwlnik"
-nasa_api_url = "https://api.nasa.gov/neo/"
+try:
+	config = ConfigParser()
+	config.read('config.ini')
+
+	nasa_api_key = config.get('nasa', 'api_key')
+	nasa_api_url = config.get('nasa', 'api_url')
+
+except:
+	logger.exception('')
+print('DONE')
 
 # Getting todays date
 #tiek izveidota fukcija, kura iegūst informāciju par šodienas datumu (gadu, mēnesi, dienu)
@@ -169,8 +177,8 @@ if r.status_code == 200:
 
 	#ja ast_hazardous garums ir mazāks par 0
 	else:
-	#tiek izdrukāta informācija par to, ka šodien neviens bītams asteroīds zemei garām nelido	
-	print("No asteroids close passing earth today")
+		#tiek izdrukāta informācija par to, ka šodien neviens bītams asteroīds zemei garām nelido
+		print("No asteroids close passing earth today")
 
 else:
 	#tiek izdrukāta informācija par to, ka šobrīd nevar savienoties ar NASA API un tiek izdrukāta informacija
